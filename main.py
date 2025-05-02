@@ -2,13 +2,16 @@ import asyncio
 
 import aiohttp
 
+from civitai.network.cookies import cookies
 from civitai.network.downloader import File, get_image_html
 from civitai.network.infinite import InfiniteLoader, Input
 from civitai.network.parser import extract_mantine_class
 
 
 async def download_n_files(n: int, out_dir: str, tags: list[int] | None = None):
-    async with aiohttp.ClientSession() as session:
+    print(cookies)
+
+    async with aiohttp.ClientSession(cookies=cookies) as session:
         infinite_loader = InfiniteLoader(session)
 
         input = Input.new(tags=tags)
@@ -28,4 +31,4 @@ async def download_n_files(n: int, out_dir: str, tags: list[int] | None = None):
 
 
 if __name__ == "__main__":
-    asyncio.run(download_n_files(2, "output"))
+    asyncio.run(download_n_files(500, "output", tags=[113935]))
