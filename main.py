@@ -3,6 +3,7 @@ from time import time
 
 import aiohttp
 
+from civitai.cmd.args import args
 from civitai.network.cookies import cookies
 from civitai.network.downloader import File, get_image_html
 from civitai.network.infinite import InfiniteLoader, Input
@@ -56,4 +57,11 @@ async def download_n_files(
 
 
 if __name__ == "__main__":
-    asyncio.run(download_n_files(500, "output", tags=[113935]))
+    asyncio.run(
+        download_n_files(
+            n=args.num_files,
+            out_dir=args.out_dir,
+            tags=args.tags,
+            max_workers=args.max_workers,
+        )
+    )
