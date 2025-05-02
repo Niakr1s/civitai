@@ -1,4 +1,5 @@
 import asyncio
+from time import time
 
 import aiohttp
 
@@ -22,13 +23,16 @@ async def download_n_files(n: int, out_dir: str, tags: list[int] | None = None):
                 id = page.ids.pop(0)
                 image_html = await get_image_html(session, id)
                 url = extract_mantine_class(image_html)[0]
-                print(f"[{id}] Start")
+                start = time()
                 saved_path, downloaded = await File.download(
                     session, url, out_dir, f"{id}"
                 )
                 n -= 1
+                duration = time() - start
                 msg = "Save" if downloaded else "Skip"
-                print(f"[{id}] {msg} '{saved_path}', {n} files remained to download.")
+                print(
+                    f"[{id}] {msg} '{saved_path}' in {duration:.2f}s, {n} files remained to download."
+                )
 
 
 if __name__ == "__main__":
