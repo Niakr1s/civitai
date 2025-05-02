@@ -45,7 +45,9 @@ async def download_n_files(
         while n > 0:
             page = await infinite_loader.load_page(input)
             input = input.next(page.nextCursor)  # update input immediatly
-            print(f"Loaded {len(page.ids)} ids. {n} files left to download.")
+            print(
+                f"Loaded next batch with {len(page.ids)} ids. {n} files left to download."
+            )
 
             batch = []
             sem = asyncio.Semaphore(max_workers)  # limit number of concurrent downloads
