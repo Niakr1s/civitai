@@ -9,6 +9,18 @@ from civitai.network.infinite import InfiniteLoader, Input
 from civitai.network.parser import extract_mantine_class
 
 
+def catch_errors(func):
+    async def wrapper(*args, **kwargs):
+        try:
+            return await func(*args, **kwargs)
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            # You can add more handling here if needed
+
+    return wrapper
+
+
+@catch_errors
 async def download_file(
     session: aiohttp.ClientSession, id: int, out_dir: str, sem: asyncio.Semaphore
 ):
