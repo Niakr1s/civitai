@@ -15,11 +15,17 @@ class File:
     def suggested_extension(self) -> str:
         return self.content_type.split("/")[-1] if "/" in self.content_type else ""
 
-    def save_to(self, dir: Path, filename: str, extension: str | None = None):
+    def save_to(self, dir: Path, filename: str, extension: str | None = None) -> Path:
         if extension is None:
             extension = self.suggested_extension()
-        with open(dir / f"{filename}.{extension}", "wb") as f:
+
+        dir = Path(dir)
+        dir.mkdir(parents=True, exist_ok=True)
+
+        save_path = dir / f"{filename}.{extension}"
+        with open(save_path, "wb") as f:
             f.write(self.data)
+        return save_path
 
     @abstractmethod
     async def download(session: aiohttp.ClientSession, url: str) -> "File":
@@ -27,6 +33,19 @@ class File:
             content_type = resp.content_type
             data = await resp.read()
             return File(data, content_type)
+
+
+async def get_html(session: aiohttp.ClientSession, url: str) -> str:
+    async with session.get(url) as resp:
+        return await resp.text()
+
+
+IMAGE_HTML_URL = "https://civitai.com/images/"
+
+
+async def get_image_html(session: aiohttp.ClientSession, id: int) -> str:
+    async with session.get(IMAGE_HTML_URL + str(id)) as resp:
+        return await resp.text()
 
 
 async def main():
