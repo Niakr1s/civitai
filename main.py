@@ -9,6 +9,16 @@ from civitai.network.infinite import InfiniteLoader, Input
 from civitai.network.parser import extract_mantine_class
 
 
+async def download_file(session: aiohttp.ClientSession, id: int, out_dir: str):
+    image_html = await get_image_html(session, id)
+    url = extract_mantine_class(image_html)[0]
+    start = time()
+    saved_path, downloaded = await File.download(session, url, out_dir, f"{id}")
+    duration = time() - start
+    msg = "Save" if downloaded else "Skip"
+    print(f"[{id}] {msg} '{saved_path}' in {duration:.2f}s")
+
+
 async def download_n_files(n: int, out_dir: str, tags: list[int] | None = None):
     async with aiohttp.ClientSession(cookies=cookies) as session:
         infinite_loader = InfiniteLoader(session)
@@ -21,18 +31,8 @@ async def download_n_files(n: int, out_dir: str, tags: list[int] | None = None):
 
             while len(page.ids) > 0 and n > 0:
                 id = page.ids.pop(0)
-                image_html = await get_image_html(session, id)
-                url = extract_mantine_class(image_html)[0]
-                start = time()
-                saved_path, downloaded = await File.download(
-                    session, url, out_dir, f"{id}"
-                )
+                await download_file(session, id, out_dir)
                 n -= 1
-                duration = time() - start
-                msg = "Save" if downloaded else "Skip"
-                print(
-                    f"[{id}] {msg} '{saved_path}' in {duration:.2f}s, {n} files remained to download."
-                )
 
 
 if __name__ == "__main__":
