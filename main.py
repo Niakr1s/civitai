@@ -35,26 +35,42 @@ async def download_file(
         print(f"[{id}] {msg} '{saved_path}' in {duration:.2f}s")
 
 
+# If n is 0 or None, download infinite files
 async def download_n_files(
-    n: int, out_dir: str, tags: list[int] | None = None, max_workers: int = 5
+    n: int | None, out_dir: str, tags: list[int] | None = None, max_workers: int = 5
 ):
+    def have_iterations(n: int | None) -> bool:
+        return n is None or n > 0
+
+    def remained_str(n: int | None) -> str:
+        return "'inf'" if n is None else n
+
+    if n == 0:
+        n = None
+
+    print(
+        f"Starting download {remained_str(n)} files to '{out_dir}' directory with tags: {tags} concurrently with {max_workers} workers..."
+    )
+
     async with aiohttp.ClientSession(cookies=cookies) as session:
         infinite_loader = InfiniteLoader(session)
 
         input = Input.new(tags=tags)
-        while n > 0:
+        while have_iterations(n):
             page = await infinite_loader.load_page(input)
             input = input.next(page.nextCursor)  # update input immediatly
+
             print(
-                f"Loaded next batch with {len(page.ids)} ids. {n} files left to download."
+                f"Loaded next batch with {len(page.ids)} ids. {remained_str(n)} files left to download."
             )
 
             batch = []
             sem = asyncio.Semaphore(max_workers)  # limit number of concurrent downloads
-            while len(page.ids) > 0 and n > 0:
+            while len(page.ids) > 0 and have_iterations(n):
                 id = page.ids.pop(0)
                 batch.append(download_file(session, id, out_dir, sem=sem))
-                n -= 1
+                if n is not None:
+                    n -= 1
             await asyncio.gather(*batch)
 
 
