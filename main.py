@@ -9,8 +9,6 @@ from civitai.network.parser import extract_mantine_class
 
 
 async def download_n_files(n: int, out_dir: str, tags: list[int] | None = None):
-    print(cookies)
-
     async with aiohttp.ClientSession(cookies=cookies) as session:
         infinite_loader = InfiniteLoader(session)
 
@@ -24,10 +22,13 @@ async def download_n_files(n: int, out_dir: str, tags: list[int] | None = None):
                 id = page.ids.pop(0)
                 image_html = await get_image_html(session, id)
                 url = extract_mantine_class(image_html)[0]
-                image = await File.download(session, url)
-                saved_path = image.save_to(out_dir, f"{id}")
+                print(f"[{id}] Start")
+                saved_path, downloaded = await File.download(
+                    session, url, out_dir, f"{id}"
+                )
                 n -= 1
-                print(f"Saved file '{saved_path}', {n} files remained to download.")
+                msg = "Save" if downloaded else "Skip"
+                print(f"[{id}] {msg} '{saved_path}', {n} files remained to download.")
 
 
 if __name__ == "__main__":

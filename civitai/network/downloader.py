@@ -8,31 +8,34 @@ URL = ""
 
 
 class File:
-    def __init__(self, data: bytes, content_type: str):
-        self.data = data
-        self.content_type = content_type
-
-    def suggested_extension(self) -> str:
-        return self.content_type.split("/")[-1] if "/" in self.content_type else ""
-
-    def save_to(self, dir: Path, filename: str, extension: str | None = None) -> Path:
-        if extension is None:
-            extension = self.suggested_extension()
-
-        dir = Path(dir)
-        dir.mkdir(parents=True, exist_ok=True)
-
-        save_path = dir / f"{filename}.{extension}"
-        with open(save_path, "wb") as f:
-            f.write(self.data)
-        return save_path
+    @abstractmethod
+    def suggested_extension(content_type: str) -> str:
+        return content_type.split("/")[-1] if "/" in content_type else ""
 
     @abstractmethod
-    async def download(session: aiohttp.ClientSession, url: str) -> "File":
+    async def download(
+        session: aiohttp.ClientSession,
+        url: str,
+        save_dir: str,
+        filename: str,
+        skip_if_exists: bool = True,
+    ) -> tuple[Path, bool]:
         async with session.get(url) as resp:
+            save_dir = Path(save_dir)
+            save_dir.mkdir(parents=True, exist_ok=True)
+
+            filename = Path(filename)
+
             content_type = resp.content_type
+            ext = File.suggested_extension(content_type)
+            save_path = save_dir / f"{filename}.{ext}"
+            if skip_if_exists and save_path.exists():
+                return (save_path, False)
+
             data = await resp.read()
-            return File(data, content_type)
+            with open(save_path, "wb") as f:
+                f.write(data)
+            return (save_path, True)
 
 
 async def get_html(session: aiohttp.ClientSession, url: str) -> str:
